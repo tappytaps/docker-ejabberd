@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: xmppservice
+  labels:
+    app: xmpp
+spec:
+  ports:
+  - name: c2s
+    port: 1234
+  clusterIP: None
+  selector:
+    app: xmpp

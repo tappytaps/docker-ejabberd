@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ejabberd
+spec:
+  selector:
+    matchLabels:
+      app: xmpp # has to match .spec.template.metadata.labels
+  serviceName: "xmppservice" # has to match the headless-service name - the hostname will be ejabberd-{nodeNumber}.xmppservice
+  replicas: 2 # by default is 1
+  template:
+    metadata:
+      labels:
+        app: xmpp # has to match .spec.selector.matchLabels
+    spec:
+      terminationGracePeriodSeconds: 20
+      containers:
+      nodeSelector:
+        appbackend: xmpp
+      containers:
+      #Conteiner environment
+      - env:
+         #Ejabberd server settings
+        - name: EJABBERD_AUTO_JOIN_CLUSTER
+          value: "true"
+        - name: EJABBERD_SKIP_MODULES_UPDATE
+          value: "true"
+        - name: EJABBERD_LOGLEVEL
+          value: "4"
+        - name: EJABBERD_S2S_SSL
+          value: "true"
+        - name: EJABBERD_STARTTLS
+          value: "true"
+        - name: EJABBERD_USER
+          value: "ejabberd"
+        - name: ERLANG_COOKIE
+          value: DOYOULIKEIT
+        name: ejabberd-node
+        image: ccpereira/ejabberd-kubernetes
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5222
+        - containerPort: 5269
+        - containerPort: 5280
+        - containerPort: 4369
+        - containerPort: 4200
+        - containerPort: 4201
+        - containerPort: 4202
+        - containerPort: 4203
+        - containerPort: 4204
+        - containerPort: 4205
+        - containerPort: 4206
+        - containerPort: 4207
+        - containerPort: 4208
+        - containerPort: 4209
+        - containerPort: 4210
+        resources: {}
+      restartPolicy: Always
