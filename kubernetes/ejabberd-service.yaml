@@ -4,7 +4,7 @@ metadata:
   annotations:
   labels:
     app: xmpp
-  name: xmpp-svc
+  name: xmpp-external-svc
 spec:
   type: NodePort
   selector:
