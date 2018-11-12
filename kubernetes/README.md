@@ -1,12 +1,13 @@
 ## Ejabberd + Kubernetes
 
-After some googling around, I scratched my head for why there isn't any documented steps to get Ejabberd working with K8s. For that reason after some sweeting, I was abled to setup those two together quite easily. Thanks to the awesome rroemhild/ejabberd docker image and all the scripts already created around that image.
+After some googling around, I scratched my head for why there isn't any documented steps to get Ejabberd working with K8s. For that reason after some searchers, I was abled to setup those two together quite easily. Thanks to the awesome rroemhild/ejabberd docker image and all the scripts already created around that image.
 
-Because Kubernetes needs the image pre-built with the scripts and modification I made. I built a different image available as ccpereira/ejabberd-k8s:0.0.1
+Because Kubernetes needs the image pre-built with the scripts and modifications, I built a different image available as ccpereira/ejabberd-k8s:0.0.1
 
 I would if approved, suggest rroemhild to later add that to the main branch.
 
 # New environment variable:
+
 ````
 EJABBERD_AUTO_JOIN_CLUSTER: true/false
 ````
@@ -41,7 +42,7 @@ The reason I switched kube-dns to Coredns was that it would make things easier a
 
 Firstly, there are different ways to deploy a service on Kubernetes. Here I'm using a Statefulset because of its predictable behavior. If you deploy an app with a Statefulset, as you scale up the ejabberd nodes, each ejabberd node will always have the following variation <ERLANG_NODE>@<PodHostName>.
 
-E.g: A cluster with 3 nodes  will be:
+- E.g: A cluster with 3 nodes  will be:
 
 
 * ERLANG_NODE: ejabberd-k8s
@@ -225,7 +226,7 @@ What this CoreDns config does? If we call  ejabberdctl join_cluster ejabberd-k8s
 
 ## Step 4 - Deploy the cluster
 
-If you have all setup. Just a few commands will be enough to have a cluster up and running:
+If you have all setup done. Just a few commands will be enough to have a cluster up and running:
 
 ````
 1). Apply the coredns config:
