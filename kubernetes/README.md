@@ -1,4 +1,4 @@
-##Ejabberd + Kubernetes
+## Ejabberd + Kubernetes
 
 After some googling around, I scratched my head for why there isn't any documented steps to get Ejabberd working with K8s. For that reason after some sweeting, I was abled to setup those two together quite easily. Thanks to the awesome rroemhild/ejabberd docker image and all the scripts already created around that image.
 
@@ -6,12 +6,12 @@ Because Kubernetes needs the image pre-built with the scripts and modification I
 
 I would if approved, suggest rroemhild to later add that to the main branch.
 
-#New environment variable:
+# New environment variable:
 ````
 EJABBERD_AUTO_JOIN_CLUSTER: true/false
 ````
 
-#New script
+# New script
 
 I changed the script from the docker-compose-cluster example:
 
@@ -24,20 +24,20 @@ Some other changes:
 
 There is probably a better ways to set them together. And quite frankly, I'm not an expert on either one, but I thought, maybe someone won't waste time researching all over again, and will improve that implementation instead. So stick with me please.
 
-##Step 1 - The environment
+## Step 1 - The environment
 
 For that implementation to work, you have to setup a environment with kubernetes and switch the Kube-dns to CoreDns - Here you will find out how: https://kubernetes.io/docs/tasks/administer-cluster/coredns/
 
 The reason I switched kube-dns to Coredns was that it would make things easier and I wouldn't need to setup a service discovery. I will discuss the details on my coredns setup below.
 
-#Prerequisites:
+# Prerequisites:
 
 
 * Kubernetes 1.11+
 * CoreDns -  Install the CoreDns  - [Here is how](https://github.com/coredns/deployment/tree/master/kubernetes)
 
 
-##Step 2 - Kubernetes Manifests
+## Step 2 - Kubernetes Manifests
 
 Firstly, there are different ways to deploy a service on Kubernetes. Here I'm using a Statefulset because of its predictable behavior. If you deploy an app with a Statefulset, as you scale up the ejabberd nodes, each ejabberd node will always have the following variation <ERLANG_NODE>@<PodHostName>.
 
@@ -56,7 +56,7 @@ So lets see how will all the kubernetes manifests look like in the end:
 We need three manifests for our ejabberd cluster and one for the Coredns config
 
 
-#-The StatefulSet manifest
+# The StatefulSet manifest
 
 ````
 apiVersion: apps/v1
@@ -120,7 +120,7 @@ spec:
 
 ````
 
-#The Headless Service:
+# The Headless Service:
 
 The information regarding a headless service can be found [here](https://kubernetes.io/docs/concepts/services-networking/service/)
 
@@ -146,7 +146,7 @@ spec:
     app: xmpp
 
 ````
-#-The Client service:
+# The external service:
 
 That service will expose the port 5222 to the clients to connect our ejabberd cluster.
 
@@ -176,7 +176,7 @@ status:
 ````
 
 
-##Step 3 - CoreDNS
+## Step 3 - CoreDNS
 
 The folder coredns has the manifest coredns-deployment.yaml that will setup the coredns on our cluster.
 
@@ -223,7 +223,7 @@ data:
 What this CoreDns config does? If we call  ejabberdctl join_cluster ejabberd-k8s@pod-0 for any ejabberd node, it will redirect to the service where that host(pod) is located and we will have the node joining the ejabberd cluster.
 
 
-##Step 4 - Deploy the cluster
+## Step 4 - Deploy the cluster
 
 If you have all setup. Just a few commands will be enough to have a cluster up and running:
 
@@ -251,4 +251,4 @@ $kubectl exec -it chat-0 ejabberdctl list_cluster
 'ejabberd-k8s@chat-0'
 ````
 
-#Happy coding!
+# Happy coding!
