@@ -1,4 +1,4 @@
-## Ejabberd + Kubernetes
+# Ejabberd + Kubernetes
 
 After some googling around, I scratched my head for why there isn't any documented steps to get Ejabberd working with K8s. For that reason after some searchers, I was abled to setup those two together quite easily. Thanks to the awesome rroemhild/ejabberd docker image and all the scripts already created around that image.
 
@@ -6,13 +6,13 @@ Because Kubernetes needs the image pre-built with the scripts and modifications,
 
 I would if approved, suggest rroemhild to later add that to the main branch.
 
-# New environment variable:
+### New environment variable:
 
 ````
 EJABBERD_AUTO_JOIN_CLUSTER: true/false
 ````
 
-# New script
+### New script
 
 I changed the script from the docker-compose-cluster example:
 
@@ -25,13 +25,13 @@ Some other changes:
 
 There is probably a better ways to set them together. And quite frankly, I'm not an expert on either one, but I thought, maybe someone won't waste time researching all over again, and will improve that implementation instead. So stick with me please.
 
-## Step 1 - The environment
+### Step 1 - The environment
 
 For that implementation to work, you have to setup a environment with kubernetes and switch the Kube-dns to CoreDns - Here you will find out how: https://kubernetes.io/docs/tasks/administer-cluster/coredns/
 
 The reason I switched kube-dns to Coredns was that it would make things easier and I wouldn't need to setup a service discovery. I will discuss the details on my coredns setup below.
 
-# Prerequisites:
+### Prerequisites:
 
 
 * Kubernetes 1.11+
@@ -57,7 +57,7 @@ So lets see how will all the kubernetes manifests look like in the end:
 We need three manifests for our ejabberd cluster and one for the Coredns config
 
 
-# The StatefulSet manifest
+### The StatefulSet manifest
 
 ````
 apiVersion: apps/v1
@@ -121,7 +121,7 @@ spec:
 
 ````
 
-# The Headless Service:
+### The Headless Service:
 
 The information regarding a headless service can be found [here](https://kubernetes.io/docs/concepts/services-networking/service/)
 
@@ -147,7 +147,7 @@ spec:
     app: xmpp
 
 ````
-# The external service:
+### The external service:
 
 That service will expose the port 5222 to the clients to connect our ejabberd cluster.
 
@@ -239,9 +239,10 @@ $kubectl apply -f /path/to/ejabberd-service.yaml
 3). Deploy the cluster
 $kubectl apply -f /path/to/statefulset.yaml
 
+````
+##Step 5 - Check cluster status
 
-Step 5 - Check cluster status
-
+````
 $kubectl exec -it chat-0 ejabberdctl list_cluster
 'ejabberd-k8s@chat-1'
 'ejabberd-k8s@chat-0'
@@ -252,4 +253,4 @@ $kubectl exec -it chat-0 ejabberdctl list_cluster
 'ejabberd-k8s@chat-0'
 ````
 
-# Happy coding!
+## Happy coding!
