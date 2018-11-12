@@ -1,6 +1,6 @@
 # Ejabberd + Kubernetes
 
-After some googling around, I scratched my head for why there isn't any documented steps to get Ejabberd working with K8s. For that reason after some searchers, I was abled to setup those two together quite easily. Thanks to the awesome rroemhild/ejabberd docker image and all the scripts already created around that image.
+After some googling around, I scratched my head for why there isn't any documented steps to get Ejabberd working with K8s. For that reason after some searches, I was abled to setup those two together quite easily. Thanks to the awesome rroemhild/ejabberd docker image and all the scripts already created around that image.
 
 Because Kubernetes needs the image pre-built with the scripts and modifications, I built a different image available as ccpereira/ejabberd-k8s:0.0.1
 
@@ -240,7 +240,7 @@ $kubectl apply -f /path/to/ejabberd-service.yaml
 $kubectl apply -f /path/to/statefulset.yaml
 
 ````
-##Step 5 - Check cluster status
+## Step 5 - Check cluster status
 
 ````
 $kubectl exec -it chat-0 ejabberdctl list_cluster
