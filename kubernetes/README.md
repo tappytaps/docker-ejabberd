@@ -1,4 +1,4 @@
-Ejabberd + Kubernetes
+##Ejabberd + Kubernetes
 
 After some googling around, I scratched my head for why there isn't any documented steps to get Ejabberd working with K8s. For that reason after some sweeting, I was abled to setup those two together quite easily. Thanks to the awesome rroemhild/ejabberd docker image and all the scripts already created around that image.
 
@@ -6,55 +6,59 @@ Because Kubernetes needs the image pre-built with the scripts and modification I
 
 I would if approved, suggest rroemhild to later add that to the main branch.
 
-New environment variable:
-
+#New environment variable:
+````
 EJABBERD_AUTO_JOIN_CLUSTER: true/false
+````
 
-New script
+#New script
 
 I changed the script from the docker-compose-cluster example:
 
-  100_ejabberd_join_cluster.sh
+- 100_ejabberd_join_cluster.sh
 
 Some other changes:
-  base_functions.sh
-  functions.sh
-  run.sh
-s
+- base_functions.sh
+- functions.sh
+- run.sh
 
-There is probably a better ways to set them together. And quite frankly, I'm not an expert on either one, but I thought, maybe someone won't waste researching all over, and will improve that implementation instead. So stick with me please.
+There is probably a better ways to set them together. And quite frankly, I'm not an expert on either one, but I thought, maybe someone won't waste time researching all over again, and will improve that implementation instead. So stick with me please.
 
+##Step 1 - The environment
 
-Step 1 - The environment
-
-For that implementation to work, you have to setup a environment with kubernetes and switch the Kube-dns to CoreDns [Here you will find out how]:https://kubernetes.io/docs/tasks/administer-cluster/coredns/
+For that implementation to work, you have to setup a environment with kubernetes and switch the Kube-dns to CoreDns - Here you will find out how: https://kubernetes.io/docs/tasks/administer-cluster/coredns/
 
 The reason I switched kube-dns to Coredns was that it would make things easier and I wouldn't need to setup a service discovery. I will discuss the details on my coredns setup below.
 
-Prerequisites:
-
--Kubernetes 1.11+
--CoreDns -  Install the CoreDns  - [Here is how]:https://github.com/coredns/deployment/tree/master/kubernetes
+#Prerequisites:
 
 
-Step 2 - Kubernetes Manifests
+* Kubernetes 1.11+
+* CoreDns -  Install the CoreDns  - [Here is how](https://github.com/coredns/deployment/tree/master/kubernetes)
+
+
+##Step 2 - Kubernetes Manifests
 
 Firstly, there are different ways to deploy a service on Kubernetes. Here I'm using a Statefulset because of its predictable behavior. If you deploy an app with a Statefulset, as you scale up the ejabberd nodes, each ejabberd node will always have the following variation <ERLANG_NODE>@<PodHostName>.
 
 E.g: A cluster with 3 nodes  will be:
 
-  ERLANG_NODE: ejabberd-k8s
 
-  Pod 1: ejabberd-k8s@pod-0 (it's not a master, but lets call that the master)
-  Pod 2: ejabberd-k8s@pod-1
-  Pod 3: ejabberd-k8s@pod-2
+* ERLANG_NODE: ejabberd-k8s
+
+- Pod 1: ejabberd-k8s@pod-0 (it's not a master, but lets call that the master)
+- Pod 2: ejabberd-k8s@pod-1
+- Pod 3: ejabberd-k8s@pod-2
+
 
 So lets see how will all the kubernetes manifests look like in the end:
 
 We need three manifests for our ejabberd cluster and one for the Coredns config
 
--The StatefulSet manifest
 
+#-The StatefulSet manifest
+
+````
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -114,13 +118,15 @@ spec:
         resources: {}
       restartPolicy: Always
 
+````
 
-The Headless Service:
+#The Headless Service:
 
-The information regarding a headless service can be [found here]:https://kubernetes.io/docs/concepts/services-networking/service/
+The information regarding a headless service can be found [here](https://kubernetes.io/docs/concepts/services-networking/service/)
 
 The pod's name + the headless service's name will be the hostname that we need to compose our cluster:
 
+````
 chat-0.xmpp-internal-svc
 chat-1.xmpp-internal-svc
 chat-1.xmpp-internal-svc
@@ -139,11 +145,12 @@ spec:
   selector:
     app: xmpp
 
-
--The Client service:
+````
+#-The Client service:
 
 That service will expose the port 5222 to the clients to connect our ejabberd cluster.
 
+````
 apiVersion: v1
 kind: Service
 metadata:
@@ -166,16 +173,18 @@ spec:
     nodePort: 30396
 status:
   loadBalancer: {}
+````
 
 
-Step 3 - CoreDNS
+##Step 3 - CoreDNS
 
 The folder coredns has the manifest coredns-deployment.yaml that will setup the coredns on our cluster.
 
 before deploy we will need to modify the CoreFile section on the ConfigMap.
 
-Pods will always have a predictable variation of it's name with Statefulset, so leveraging the coredns "rewrite" feature, we can quite easily discovery each ejabberd node. Check out the lines that starts with 'rewrite'. My implementation won't have more that 10 ejabberd nodes, that is quite enough for now. Checkout the CoreDNS rewrite [documentation]:https://github.com/coredns/coredns/tree/master/plugin/rewrite  you can user regex to improve those rules, most probably just a line will be enough.
+Pods will always have a predictable variation of it's name with Statefulset, so leveraging the coredns "rewrite" feature, we can quite easily discovery each ejabberd node. Check out the lines that starts with 'rewrite'. My implementation won't have more that 10 ejabberd nodes, that is quite enough for now. Checkout the CoreDNS rewrite [documentation](https://github.com/coredns/coredns/tree/master/plugin/rewrite)   you can user regex to improve those rules, most probably just a line will be enough.
 
+````
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -209,14 +218,16 @@ data:
         reload
         loadbalance
     }
+````
 
 What this CoreDns config does? If we call  ejabberdctl join_cluster ejabberd-k8s@pod-0 for any ejabberd node, it will redirect to the service where that host(pod) is located and we will have the node joining the ejabberd cluster.
 
 
-Step 4 - Deploy the cluster
+##Step 4 - Deploy the cluster
 
 If you have all setup. Just a few commands will be enough to have a cluster up and running:
 
+````
 1). Apply the coredns config:
 $kubectl apply -f /path/to/coredns-configmap.yaml
 
@@ -238,5 +249,6 @@ $kubectl exec -it chat-0 ejabberdctl list_cluster
 'ejabberd-k8s@chat-2'
 'ejabberd-k8s@chat-1'
 'ejabberd-k8s@chat-0'
+````
 
-Happy coding!
+#Happy coding!
