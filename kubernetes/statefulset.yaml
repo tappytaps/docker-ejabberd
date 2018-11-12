@@ -1,12 +1,12 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: ejabberd
+  name: chat
 spec:
   selector:
     matchLabels:
       app: xmpp # has to match .spec.template.metadata.labels
-  serviceName: "xmppservice" # has to match the headless-service name - the hostname will be ejabberd-{nodeNumber}.xmppservice
+  serviceName: "k8service" # has to match the headless-service name - the hostname will be ejabberd-{nodeNumber}.xmppservice
   replicas: 2 # by default is 1
   template:
     metadata:
@@ -36,7 +36,7 @@ spec:
         - name: ERLANG_COOKIE
           value: DOYOULIKEIT
         name: ejabberd-node
-        image: ccpereira/ejabberd-kubernetes
+        image: ccpereira/ejabberd-k8s:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 5222

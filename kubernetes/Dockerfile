@@ -22,9 +22,11 @@ USER root
 
 RUN mkdir -p $EJABBERD_HOME/scripts/cluster
 
-COPY ./scripts/cluster/100_ejabberd_join_cluster.sh $EJABBERD_HOME/scripts/100_ejabberd_join_cluster.sh
+COPY ./scripts/cluster/100_ejabberd_join_cluster.sh $EJABBERD_HOME/scripts/cluster/100_ejabberd_join_cluster.sh
 
 COPY ./scripts/lib/base_functions.sh $EJABBERD_HOME/scripts/lib/base_functions.sh
+COPY ./scripts/lib/functions.sh $EJABBERD_HOME/scripts/lib/functions.sh
+
 
 ADD ./run.sh /sbin/run
 
@@ -35,6 +37,7 @@ RUN chown -R $EJABBERD_USER:$EJABBERD_USER $EJABBERD_HOME
 RUN chmod +x /sbin/run
 RUN chmod +x $EJABBERD_HOME/scripts/cluster/100_ejabberd_join_cluster.sh
 RUN chmod +x $EJABBERD_HOME/scripts/lib/base_functions.sh
+RUN chmod +x $EJABBERD_HOME/scripts/lib/functions.sh
 
 USER $EJABBERD_USER
 
