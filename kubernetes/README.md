@@ -1,9 +1,29 @@
 Ejabberd + Kubernetes
 
+After some googling around, I scratched my head for why there isn't any documented steps to get Ejabberd working with K8s. For that reason after some sweeting, I was abled to setup those two together quite easily. Thanks to the awesome rroemhild/ejabberd docker image and all the scripts already created around that image.
 
-After some googling around, I scratched my head for why there isn't any documented steps to get Ejabberd working with K8s. For that reason after some research. I was abled to setup those two together quite easily. Thanks to the awesome rroemhild/ejabberd docker image.
+Because Kubernetes needs the image pre-built with the scripts and modification I made. I built a different image available as ccpereira/ejabberd-k8s:0.0.1
 
-There is probably a better and different way to set them together. And quite frankly, I'm not an expert on either one. so stick with me please.
+I would if approved, suggest rroemhild to later add that to the main branch.
+
+New environment variable:
+
+EJABBERD_AUTO_JOIN_CLUSTER: true/false
+
+New script
+
+I changed the script from the docker-compose-cluster example:
+
+  100_ejabberd_join_cluster.sh
+
+Some other changes:
+  base_functions.sh
+  functions.sh
+  run.sh
+s
+
+There is probably a better ways to set them together. And quite frankly, I'm not an expert on either one, but I thought, maybe someone won't waste researching all over, and will improve that implementation instead. So stick with me please.
+
 
 Step 1 - The environment
 
@@ -13,13 +33,13 @@ The reason I switched kube-dns to Coredns was that it would make things easier a
 
 Prerequisites:
 
--Kubernetes 1.11+(for that example)
--CoreDns
+-Kubernetes 1.11+
+-CoreDns -  Install the CoreDns  - [Here is how]:https://github.com/coredns/deployment/tree/master/kubernetes
 
 
 Step 2 - Kubernetes Manifests
 
-Firstly, there are different ways to deploy an service on Kubernetes. Here I'm using a Statefulset because of its predictable behavior. If you deploy an app with a Statefulset, as you scale up the ejabberd nodes, each ejabberd node will always have the following variation <ERLANG_NODE>@<PodHostName>.
+Firstly, there are different ways to deploy a service on Kubernetes. Here I'm using a Statefulset because of its predictable behavior. If you deploy an app with a Statefulset, as you scale up the ejabberd nodes, each ejabberd node will always have the following variation <ERLANG_NODE>@<PodHostName>.
 
 E.g: A cluster with 3 nodes  will be:
 
@@ -31,20 +51,20 @@ E.g: A cluster with 3 nodes  will be:
 
 So lets see how will all the kubernetes manifests look like in the end:
 
-We need three manifests:
+We need three manifests for our ejabberd cluster and one for the Coredns config
 
 -The StatefulSet manifest
 
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: chat  # Each ejabberd node will have that as it's name.
+  name: chat # the host will be base on that name chat-0, chat-1, chat-2 as you scaleup the cluster.
 spec:
   selector:
     matchLabels:
       app: xmpp # has to match .spec.template.metadata.labels
   serviceName: "xmpp-internal-svc" # has to match the headless-service name - the hostname will be ejabberd-{nodeNumber}.xmppservice
-  replicas: 3 # Numbers of ejabberd nodes
+  replicas: 3 # The number of nodes to create
   template:
     metadata:
       labels:
@@ -52,12 +72,10 @@ spec:
     spec:
       terminationGracePeriodSeconds: 20
       containers:
-      nodeSelector:
-        appbackend: xmpp
-      containers:
       #Conteiner environment
       - env:
-         # Set that to true. The nodes will join the cluster automatically.
+         #Ejabberd server settings
+         #That variable will allow the nodes to join the cluster automatically
         - name: EJABBERD_AUTO_JOIN_CLUSTER
           value: "true"
         - name: EJABBERD_SKIP_MODULES_UPDATE
@@ -158,21 +176,27 @@ before deploy we will need to modify the CoreFile section on the ConfigMap.
 
 Pods will always have a predictable variation of it's name with Statefulset, so leveraging the coredns "rewrite" feature, we can quite easily discovery each ejabberd node. Check out the lines that starts with 'rewrite'. My implementation won't have more that 10 ejabberd nodes, that is quite enough for now. Checkout the CoreDNS rewrite [documentation]:https://github.com/coredns/coredns/tree/master/plugin/rewrite  you can user regex to improve those rules, most probably just a line will be enough.
 
-Corefile: |
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns
+  namespace: kube-system
+data:
+  Corefile: |
     .:53 {
         errors
         health
-        rewrite name chat-0.xmpp-internal-svc.default.svc.cluster.local
-        rewrite name chat-1.xmpp-internal-svc.default.svc.cluster.local
-        rewrite name chat-2.xmpp-internal-svc.default.svc.cluster.local
-        rewrite name chat-3.xmpp-internal-svc.default.svc.cluster.local
-        rewrite name chat-4.xmpp-internal-svc.default.svc.cluster.local
-        rewrite name chat-5.xmpp-internal-svc.default.svc.cluster.local
-        rewrite name chat-6.xmpp-internal-svc.default.svc.cluster.local
-        rewrite name chat-7.xmpp-internal-svc.default.svc.cluster.local
-        rewrite name chat-8.xmpp-internal-svc.default.svc.cluster.local
-        rewrite name chat-9.xmpp-internal-svc.default.svc.cluster.local
-        rewrite name chat-10.xmpp-internal-svc.default.svc.cluster.local
+        rewrite name chat-0 chat-0.xmpp-internal-svc.default.svc.cluster.local
+        rewrite name chat-1 chat-1.xmpp-internal-svc.default.svc.cluster.local
+        rewrite name chat-2 chat-2.xmpp-internal-svc.default.svc.cluster.local
+        rewrite name chat-3 chat-3.xmpp-internal-svc.default.svc.cluster.local
+        rewrite name chat-5 chat-4.xmpp-internal-svc.default.svc.cluster.local
+        rewrite name chat-5 chat-5.xmpp-internal-svc.default.svc.cluster.local
+        rewrite name chat-6 chat-6.xmpp-internal-svc.default.svc.cluster.local
+        rewrite name chat-7 chat-7.xmpp-internal-svc.default.svc.cluster.local
+        rewrite name chat-8 chat-8.xmpp-internal-svc.default.svc.cluster.local
+        rewrite name chat-9 chat-9.xmpp-internal-svc.default.svc.cluster.local
+        rewrite name chat-10 chat-10.xmpp-internal-svc.default.svc.cluster.local
         kubernetes cluster.local in-addr.arpa ip6.arpa {
           pods insecure
           upstream
@@ -187,3 +211,32 @@ Corefile: |
     }
 
 What this CoreDns config does? If we call  ejabberdctl join_cluster ejabberd-k8s@pod-0 for any ejabberd node, it will redirect to the service where that host(pod) is located and we will have the node joining the ejabberd cluster.
+
+
+Step 4 - Deploy the cluster
+
+If you have all setup. Just a few commands will be enough to have a cluster up and running:
+
+1). Apply the coredns config:
+$kubectl apply -f /path/to/coredns-configmap.yaml
+
+2). Apply the services and headeless services
+$kubectl apply -f /path/to/headless-service.yaml
+$kubectl apply -f /path/to/ejabberd-service.yaml
+
+3). Deploy the cluster
+$kubectl apply -f /path/to/statefulset.yaml
+
+
+Step 5 - Check cluster status
+
+$kubectl exec -it chat-0 ejabberdctl list_cluster
+'ejabberd-k8s@chat-1'
+'ejabberd-k8s@chat-0'
+
+$kubectl exec -it chat-0 ejabberdctl list_cluster
+'ejabberd-k8s@chat-2'
+'ejabberd-k8s@chat-1'
+'ejabberd-k8s@chat-0'
+
+Happy coding!

@@ -1,13 +1,13 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: chat
+  name: chat # the host will be base on that name chat-0, chat-1, chat-2 as you scaleup the cluster.
 spec:
   selector:
     matchLabels:
       app: xmpp # has to match .spec.template.metadata.labels
   serviceName: "xmpp-internal-svc" # has to match the headless-service name - the hostname will be ejabberd-{nodeNumber}.xmppservice
-  replicas: 2 # by default is 1
+  replicas: 3 # The number of nodes to create
   template:
     metadata:
       labels:
@@ -18,6 +18,7 @@ spec:
       #Conteiner environment
       - env:
          #Ejabberd server settings
+         #That variable will allow the nodes to join the cluster automatically
         - name: EJABBERD_AUTO_JOIN_CLUSTER
           value: "true"
         - name: EJABBERD_SKIP_MODULES_UPDATE
