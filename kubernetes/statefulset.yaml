@@ -15,9 +15,6 @@ spec:
     spec:
       terminationGracePeriodSeconds: 20
       containers:
-      nodeSelector:
-        appbackend: xmpp
-      containers:
       #Conteiner environment
       - env:
          #Ejabberd server settings
