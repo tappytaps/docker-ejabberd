@@ -6,7 +6,7 @@ spec:
   selector:
     matchLabels:
       app: xmpp # has to match .spec.template.metadata.labels
-  serviceName: "k8service" # has to match the headless-service name - the hostname will be ejabberd-{nodeNumber}.xmppservice
+  serviceName: "xmpp-internal-svc" # has to match the headless-service name - the hostname will be ejabberd-{nodeNumber}.xmppservice
   replicas: 3 # by default is 1
   template:
     metadata:
